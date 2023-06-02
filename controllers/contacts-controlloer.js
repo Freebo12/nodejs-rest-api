@@ -10,6 +10,10 @@ const addContactSchema = Joi.object({
   phone: Joi.string().min(3).max(15).required(),
 });
 
+const addUpdateContactSchema = Joi.object({
+  favorite: Joi.boolean().required(),
+});
+
 const getAllContacts = async (req, res, next) => {
   try {
     const result = await service.getContacts();
@@ -80,17 +84,17 @@ const updateContact = async (req, res, next) => {
 };
 
 const updateStatusContact = async (req, res, next) => {
-  const { id } = req.params;
-  const { favorite = false } = req.body;
-
   try {
+    const { id } = req.params;
+    const { favorite = false } = req.body;
+    const { error } = addUpdateContactSchema.validate(req.body);
     const result = await service.updateStatusContact(id, { favorite });
 
+    if (error) {
+      throw HttpError(400, "missing field favorite");
+    }
+
     if (result) {
-      if (req.body === {}) {
-        console.log(req.body);
-        res.status(400).json({ message: "missing field favorite" });
-      }
       res.json({
         status: "success",
         code: 200,
