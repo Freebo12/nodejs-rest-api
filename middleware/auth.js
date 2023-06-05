@@ -7,8 +7,7 @@ const auth = async (req, res, next) => {
   const [bearer, token] = authorization.split(" ");
 
   if (bearer !== "Bearer") {
-    next(HttpError(401, "Unauthorized"));
-    console.log(User);
+    return next(HttpError(401, "Unauthorized"));
   }
 
   try {
@@ -16,12 +15,12 @@ const auth = async (req, res, next) => {
     const user = await User.findById(id);
 
     if (!user || !user.token || user.token !== token) {
-      next(HttpError(401, "Unauthorized"));
+      return next(HttpError(401, "Unauthorized"));
     }
     req.user = user;
     next();
   } catch {
-    next(HttpError(401, "Unauthorized "));
+    return next(HttpError(401, "Unauthorized "));
   }
 };
 

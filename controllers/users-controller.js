@@ -15,13 +15,8 @@ const userRegister = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    const { error } = userRegisterSchema.validate(req.body);
-    if (error) {
-      console.log(error);
-      throw HttpError(400, "Email Exist");
-    }
+
     if (user) {
-      console.log(user);
       throw HttpError(409, "Email in use");
     }
 
@@ -31,7 +26,6 @@ const userRegister = async (req, res, next) => {
       password: hashPassword,
     });
     const savedUser = await newUser.save();
-    console.log(savedUser);
     res.status(201).json({
       user: {
         email: savedUser.email,
@@ -39,7 +33,6 @@ const userRegister = async (req, res, next) => {
       },
     });
   } catch (error) {
-    console.log(error);
     next(error);
   }
 };
@@ -49,11 +42,7 @@ const userLogin = async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    const { error } = userRegisterSchema.validate(req.body);
 
-    if (error) {
-      throw HttpError(400, "Email Exist");
-    }
     if (!user) {
       throw HttpError(401, "Not authorized");
     }
@@ -90,4 +79,10 @@ const currentUser = async (req, res) => {
   res.json({ email, subscription });
 };
 
-module.exports = { userRegister, userLogin, userLogout, currentUser };
+module.exports = {
+  userRegister,
+  userLogin,
+  userLogout,
+  currentUser,
+  userRegisterSchema,
+};
