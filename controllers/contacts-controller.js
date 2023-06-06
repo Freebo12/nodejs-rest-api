@@ -1,6 +1,7 @@
 const Joi = require("joi");
 const service = require("../service");
 const serviceContacts = require("../models/contacts");
+const Contacts = require("../service/schema/contacts");
 const { HttpError } = require("../helpers");
 
 const addContactSchema = Joi.object({
@@ -15,8 +16,15 @@ const addUpdateContactSchema = Joi.object({
 });
 
 const getAllContacts = async (req, res, next) => {
+  const { page = 1, limit = 20 } = req.query;
+  const skip = (page - 1) * limit;
+
   try {
-    const result = await service.getContacts();
+    const { _id: owner } = req.user;
+    const result = await Contacts.find({ owner }, "-createdAt -updatedAt", {
+      skip,
+      limit,
+    }).populate("owner", "name email");
     res.json(result);
   } catch (error) {
     next(error);
@@ -38,12 +46,13 @@ const getContactById = async (req, res, next) => {
 
 const addContact = async (req, res, next) => {
   try {
+    const { _id: owner } = req.user;
     const { error } = addContactSchema.validate(req.body);
 
     if (error) {
       throw HttpError(400, error.message);
     }
-    const result = await service.addContact(req.body);
+    const result = await service.addContact({ ...req.body, owner });
     res.status(201).json(result);
   } catch (error) {
     next(error);
@@ -55,7 +64,6 @@ const deleteContact = async (req, res, next) => {
     const { id } = req.params;
     const result = await service.deleteContact(id);
     if (!result) {
-      console.log(id);
       throw HttpError(404, "Not found");
     }
     res.json({ message: "contact deleted" });
@@ -109,7 +117,6 @@ const updateStatusContact = async (req, res, next) => {
       });
     }
   } catch (e) {
-    console.error(e);
     next(e);
   }
 };
