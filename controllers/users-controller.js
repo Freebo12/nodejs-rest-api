@@ -3,6 +3,10 @@ const User = require("../service/schema/users");
 const { HttpError } = require("../helpers");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
 
 const regEx = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 
@@ -10,6 +14,8 @@ const userRegisterSchema = Joi.object({
   email: Joi.string().required().pattern(regEx),
   password: Joi.string().required().min(6),
 });
+
+const avatarDir = path.join(__dirname, "../", "public", "avatars");
 
 const userRegister = async (req, res, next) => {
   try {
@@ -21,9 +27,11 @@ const userRegister = async (req, res, next) => {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
+    const avatarURL = gravatar.url(email);
     const newUser = new User({
       email,
       password: hashPassword,
+      avatarURL,
     });
     const savedUser = await newUser.save();
     res.status(201).json({
@@ -79,10 +87,28 @@ const currentUser = async (req, res) => {
   res.json({ email, subscription });
 };
 
+const updateAvatar = async (req, res, next) => {
+  const { _id } = req.user;
+  const { path: tempUpload, originalname } = req.file;
+  const filename = `${_id}_${originalname}`;
+  const resultUpload = path.join(avatarDir, filename);
+
+  await Jimp.read(tempUpload)
+    .then((avatar) => avatar.resize(250, 250).write(filename))
+    .catch((err) => console.log(err));
+
+  await fs.rename(tempUpload, resultUpload);
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+
+  res.json({ avatarUrl: avatarURL });
+};
+
 module.exports = {
   userRegister,
   userLogin,
   userLogout,
   currentUser,
   userRegisterSchema,
+  updateAvatar,
 };
