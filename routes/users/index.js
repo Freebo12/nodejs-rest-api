@@ -4,13 +4,24 @@ const userController = require("../../controllers/users-controller");
 const auth = require("../../middleware/auth");
 const upload = require("../../middleware/upload");
 const validateBody = require("../../middleware/validateBody");
-const { userRegisterSchema } = require("../../controllers/users-controller");
+const {
+  userRegisterSchema,
+  userVerifySchema,
+} = require("../../controllers/users-controller");
 
 router.post(
   "/register",
   validateBody(userRegisterSchema),
   userController.userRegister
 );
+
+router.post(
+  "/verify",
+  validateBody(userVerifySchema),
+  userController.resendVerifyEmail
+);
+
+router.get("/verify/:verificationCode", userController.verifyEmail);
 
 router.post(
   "/login",
